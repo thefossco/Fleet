@@ -33,7 +33,7 @@ router.get('/', async (req: AuthRequest, res) => {
 // Mark notification as read
 router.patch('/:id/read', async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const notification = await prisma.notification.update({
       where: { id },

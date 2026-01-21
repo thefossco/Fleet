@@ -56,7 +56,7 @@ router.get('/', async (req: AuthRequest, res) => {
 // Create/Update compliance for an asset
 router.post('/:assetId', async (req: AuthRequest, res) => {
   try {
-    const { assetId } = req.params;
+    const assetId = req.params.assetId as string;
     const complianceData = req.body;
 
     // Check if compliance exists
@@ -99,7 +99,7 @@ router.post('/:assetId', async (req: AuthRequest, res) => {
 // Update fee payment status
 router.patch('/:assetId/fee-payment', async (req: AuthRequest, res) => {
   try {
-    const { assetId } = req.params;
+    const assetId = req.params.assetId as string;
     const { annualFeePaymentStatus, annualFeeAmount } = req.body;
 
     const compliance = await prisma.compliance.update({

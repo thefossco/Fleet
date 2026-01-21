@@ -45,7 +45,7 @@ router.get('/', async (req: AuthRequest, res) => {
 // Get single asset
 router.get('/:id', async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const asset = await prisma.asset.findUnique({
       where: { id },
@@ -101,7 +101,7 @@ router.post('/', async (req: AuthRequest, res) => {
 // Update asset
 router.put('/:id', async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const updateData = req.body;
 
     const asset = await prisma.asset.update({
@@ -133,7 +133,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
 // Delete asset
 router.delete('/:id', async (req: AuthRequest, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     await prisma.asset.delete({
       where: { id },

@@ -159,7 +159,7 @@ router.get('/insurance-coverage', async (req: AuthRequest, res) => {
 // Inspection history
 router.get('/inspection-history/:assetId', async (req: AuthRequest, res) => {
   try {
-    const { assetId } = req.params;
+    const assetId = req.params.assetId as string;
 
     const logs = await prisma.auditLog.findMany({
       where: {
