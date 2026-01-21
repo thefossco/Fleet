@@ -1,0 +1,197 @@
+// Prisma schema for Fleet Registration & Compliance System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with role-based access control
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  password      String
+  name          String
+  role          UserRole       @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  assets        Asset[]        @relation("CreatedAssets")
+  auditLogs     AuditLog[]
+  notifications Notification[]
+
+  @@index([email])
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  USER
+  VIEWER
+}
+
+// Asset model - unified for both vehicles and vessels
+model Asset {
+  id                   String            @id @default(cuid())
+  assetCategory        AssetCategory
+  assetType            String            // Vehicle type or Vessel type
+  registrationNumber   String            @unique
+
+  // Owner information
+  ownerName            String
+  ownerContact         String
+
+  // Asset details
+  makeModel            String
+  yearOfManufacture    Int
+  engineOrFuelType     String?
+
+  // Size details (vehicle: engine capacity, vessel: length/tonnage)
+  engineCapacity       String?           // For vehicles
+  vesselLength         Float?            // For vessels (in meters)
+  vesselTonnage        Float?            // For vessels
+
+  operationalStatus    OperationalStatus @default(ACTIVE)
+
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  createdById          String
+
+  // Relations
+  createdBy            User              @relation("CreatedAssets", fields: [createdById], references: [id])
+  compliance           Compliance?
+  documents            Document[]
+  auditLogs            AuditLog[]
+
+  @@index([assetCategory])
+  @@index([assetType])
+  @@index([registrationNumber])
+  @@index([ownerName])
+}
+
+enum AssetCategory {
+  VEHICLE
+  VESSEL
+}
+
+enum OperationalStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// Compliance model - tracks worthiness, fees, and insurance
+model Compliance {
+  id                       String             @id @default(cuid())
+  assetId                  String             @unique
+
+  // Worthiness type
+  worthinessType           WorthinessType
+
+  // Inspection details
+  inspectionDate           DateTime?
+  inspectionExpiryDate     DateTime?
+
+  // Annual fee
+  annualFeeAmount          Float?
+  annualFeePaymentStatus   PaymentStatus      @default(UNPAID)
+
+  // Insurance
+  insuranceProvider        String?
+  insurancePolicyNumber    String?
+  insuranceExpiryDate      DateTime?
+
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+
+  // Relations
+  asset                    Asset              @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([inspectionExpiryDate])
+  @@index([insuranceExpiryDate])
+  @@index([annualFeePaymentStatus])
+}
+
+enum WorthinessType {
+  ROAD_WORTHINESS
+  SEA_WORTHINESS
+}
+
+enum PaymentStatus {
+  PAID
+  UNPAID
+  PENDING
+}
+
+// Document model - for certificates and uploads
+model Document {
+  id                  String         @id @default(cuid())
+  assetId             String
+  documentType        DocumentType
+  fileReference       String         // URL or file path
+  uploadDate          DateTime       @default(now())
+  createdAt           DateTime       @default(now())
+
+  // Relations
+  asset               Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([documentType])
+}
+
+enum DocumentType {
+  REGISTRATION_CERTIFICATE
+  WORTHINESS_CERTIFICATE
+  INSURANCE_CERTIFICATE
+  OTHER
+}
+
+// Notification model - for alerts and reminders
+model Notification {
+  id              String           @id @default(cuid())
+  userId          String
+  type            NotificationType
+  title           String
+  message         String
+  read            Boolean          @default(false)
+  relatedAssetId  String?
+  createdAt       DateTime         @default(now())
+
+  // Relations
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  INSPECTION_EXPIRING
+  INSPECTION_OVERDUE
+  INSURANCE_EXPIRING
+  INSURANCE_OVERDUE
+  FEE_PAYMENT_DUE
+  SYSTEM_ALERT
+}
+
+// Audit log model - for tracking all system activities
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  userId    String
+  assetId   String?
+  details   Json?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset     Asset?   @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([assetId])
+  @@index([createdAt])
+  @@index([action])
+}
