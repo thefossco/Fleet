@@ -8,7 +8,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
 # Rebuild the source code only when needed
@@ -41,6 +41,7 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/package.json ./package.json
 
+USER root
 RUN chown -R nextjs:nodejs /app
 
 USER nextjs
@@ -48,14 +49,9 @@ USER nextjs
 EXPOSE 3000
 EXPOSE 3001
 
-ENV PORT=3000
+ENV PORT=3001
 
-# Create startup script
-RUN echo '#!/bin/sh\n\
-npx prisma migrate deploy\n\
-node server/index.js &\n\
-node server.js' > /app/start.sh
+# Create startup script that runs both Next.js and Express API
+RUN echo '#!/bin/sh\nset -e\necho "Running Prisma migrations..."\nnpx prisma migrate deploy || npx prisma db push\necho "Starting Express API server..."\nnpx tsx server/index.ts &\necho "Starting Next.js server..."\nnode server.js' > /app/start.sh && chmod +x /app/start.sh
 
-RUN chmod +x /app/start.sh
-
-CMD ["/app/start.sh"]
+CMD ["/bin/sh", "/app/start.sh"]
