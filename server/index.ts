@@ -6,6 +6,7 @@ import { complianceRouter } from './routes/compliance';
 import { dashboardRouter } from './routes/dashboard';
 import { reportsRouter } from './routes/reports';
 import { notificationsRouter } from './routes/notifications';
+import { vehicleApiRouter } from './routes/vehicle-api';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,6 +28,7 @@ app.use('/api/compliance', complianceRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/vehicle-api', vehicleApiRouter);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
